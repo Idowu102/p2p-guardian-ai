@@ -11,10 +11,11 @@ from blacklist import check_blacklist
 
 app=FastAPI(title="Binance P2P Guardian AI")
 
+from fastapi.responses import RedirectResponse
+
 @app.get("/")
 def home():
-
-    return {"message":"Binance P2P Guardian Running"}
+    return RedirectResponse(url="/docs")
 
 @app.get("/check_message")
 def check_message(message:str):
@@ -79,5 +80,6 @@ async def scan_screenshot(file:UploadFile=File(...)):
 
 @app.get("/check_blacklist")
 def check_blacklist_api(trader_id:str):
+
 
     return {"blacklisted":check_blacklist(trader_id)}
