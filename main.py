@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import RedirectResponse
 import shutil
 
 from fraud_model import predict_scammer
@@ -9,77 +10,89 @@ from chatbot import p2p_chatbot
 from screenshot_detector import analyze_screenshot
 from blacklist import check_blacklist
 
-app=FastAPI(title="Binance P2P Guardian AI")
+app = FastAPI(
+    title="Binance P2P Guardian AI",
+    description="AI assistant to make Binance P2P safer and smarter",
+    version="0.1.0"
+)
 
-from fastapi.responses import RedirectResponse
-
+# Redirect root to docs
 @app.get("/")
 def home():
     return RedirectResponse(url="/docs")
 
-@app.get("/check_message")
-def check_message(message:str):
 
-    return {"risk":detect_scam_message(message)}
+# Scam message detection
+@app.get("/check_message", summary="Check Message")
+def check_message(message: str):
+    risk = detect_scam_message(message)
+    return {"risk": risk}
 
-@app.get("/check_trader")
+
+# Trader risk prediction
+@app.get("/check_trader", summary="Check Trader")
 def check_trader(
-completion_rate:int,
-cancel_rate:int,
-account_age:int,
-disputes:int
+    completion_rate: int,
+    cancel_rate: int,
+    account_age: int,
+    disputes: int
 ):
-
-    risk=predict_scammer(
-    completion_rate,
-    cancel_rate,
-    account_age,
-    disputes
+    risk = predict_scammer(
+        completion_rate,
+        cancel_rate,
+        account_age,
+        disputes
     )
+    return {"risk": risk}
 
-    return {"risk":risk}
 
-@app.get("/trust_score")
+# Trust score calculation
+@app.get("/trust_score", summary="Trust Score")
 def trust_score(
-completion_rate:int,
-cancel_rate:int,
-account_age:int,
-disputes:int,
-volume:int
+    completion_rate: int,
+    cancel_rate: int,
+    account_age: int,
+    disputes: int,
+    volume: int
 ):
-
-    score=calculate_trust_score(
-    completion_rate,
-    cancel_rate,
-    account_age,
-    disputes,
-    volume
+    score = calculate_trust_score(
+        completion_rate,
+        cancel_rate,
+        account_age,
+        disputes,
+        volume
     )
+    return {"trust_score": score}
 
-    return {"trust_score":score}
 
-@app.get("/binance_ads")
+# Binance P2P ads
+@app.get("/binance_ads", summary="Binance Ads")
 def binance_ads():
-
-    return {"ads":get_binance_ads()}
-
-@app.get("/chatbot")
-def chatbot(question:str):
-
-    return {"answer":p2p_chatbot(question)}
-
-@app.post("/scan_screenshot")
-async def scan_screenshot(file:UploadFile=File(...)):
-
-    path="temp.png"
-
-    with open(path,"wb") as buffer:
-        shutil.copyfileobj(file.file,buffer)
-
-    return analyze_screenshot(path)
-
-@app.get("/check_blacklist")
-def check_blacklist_api(trader_id:str):
+    ads = get_binance_ads()
+    return {"ads": ads}
 
 
-    return {"blacklisted":check_blacklist(trader_id)}
+# Simple AI chatbot
+@app.get("/chatbot", summary="Chatbot")
+def chatbot(question: str):
+    answer = p2p_chatbot(question)
+    return {"answer": answer}
+
+
+# Screenshot scam detection
+@app.post("/scan_screenshot", summary="Scan Screenshot")
+async def scan_screenshot(file: UploadFile = File(...)):
+    path = "temp.png"
+
+    with open(path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    result = analyze_screenshot(path)
+    return result
+
+
+# Check blacklist
+@app.get("/check_blacklist", summary="Check Blacklist")
+def check_blacklist_api(trader_id: str):
+    blacklisted = check_blacklist(trader_id)
+    return {"blacklisted": blacklisted}
